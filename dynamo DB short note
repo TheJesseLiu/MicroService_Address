@@ -1,0 +1,29 @@
+dynamo DB short note
+
+
+// Person change address
+// person change his name
+// perso change both => post
+
+// if no person live in adderss, delete address
+Simple query, e.g. /Person?lastName=Ferguson
+
+
+
+
+//append name to list
+// 'UpdateExpression' : "SET #attrName = list_append(if_not_exists(#attrName, :empty_list), :attrValue)",
+// 'ExpressionAttributeNames' : {
+//     '#attrName' : 'Persons'
+// },
+// 'ExpressionAttributeValues' : {
+//     ':attrValue' : persons,
+//     ':empty_list': []
+// }
+
+//create attribute
+// UpdateExpression: "set Persons = :p, AddAttr =:a",
+// ExpressionAttributeValues:{
+//     ":p": persons,
+//     ":a":"add attribute"
+// },
