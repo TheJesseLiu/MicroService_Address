@@ -9,8 +9,8 @@ AWS.config.update({region: "us-east-1"});
 
 //get all items
 router.get('/', function(req, res) {
-	var ddb = new AWS.DynamoDB.DocumentClient();	
-	var params = { 
+	let ddb = new AWS.DynamoDB.DocumentClient();	
+	let params = { 
 	  	TableName: "AddressTable"
 	};
 	ddb.scan(params, function(err, data) {
@@ -27,9 +27,9 @@ router.get('/', function(req, res) {
 //add new address
 router.post('/', function(req, res) {
 	console.log(req.body);
-	var ddb = new AWS.DynamoDB.DocumentClient();
-	var add_id = req.body.Address_id;
-	var params = {
+	let ddb = new AWS.DynamoDB.DocumentClient();
+	let add_id = req.body.Address_id;
+	let params = {
 		TableName : 'AddressTable',
 		Item: req.body,
 		'ConditionExpression':'attribute_not_exists(Address_id)',
@@ -49,9 +49,9 @@ router.post('/', function(req, res) {
 
 //get address by id
 router.get('/:add_id/', function(req, res) {
-	var ddb = new AWS.DynamoDB.DocumentClient();
-    var add_id = req.params.add_id;
-	var params = {
+	let ddb = new AWS.DynamoDB.DocumentClient();
+    let add_id = req.params.add_id;
+	let params = {
 	    TableName : 'AddressTable',
 	    Key: {
 	      Address_id: '1'
@@ -68,37 +68,54 @@ router.get('/:add_id/', function(req, res) {
 
 //add person to existing address id or delete person from existing address id
 router.put('/:add_id/', function(req, res) {
-	var ddb = new AWS.DynamoDB.DocumentClient();
-    var add_id = req.params.add_id;
-    var Delete = req.body.Delete;
+	let ddb = new AWS.DynamoDB.DocumentClient();
+    let add_id = req.params.add_id;
+    let Delete = req.body.Delete;
     Name = req.body.Persons;
     if(Delete=='true'){
-		var params = {
-		    TableName:"AddressTable",
-		    Key:{
-		        "Address_id": add_id,
+		let params = {
+		    TableName : 'AddressTable',
+		    Key: {
+		      Address_id: add_id,
 		    },
-			'UpdateExpression' : "SET Persons = list_append(Persons, :toAddName)",
-			'ConditionExpression': "not contains (Persons, :toAddNameMap)",		
-			'ExpressionAttributeValues' : {
-		        ":toAddName": Name,
-		        ":toAddNameMap" : Name[0]
-			}
+		    ProjectionExpression: 'Persons',	  
 		};
-		ddb.update(params, function(err, data) {
-		    if (err) {
-		        console.error("Unable to update item. Error JSON:", JSON.stringify(err, null, 2));
-		    	res.end();
-		    } 
+		ddb.get(params, function(err, data) {
+		    if (err) console.log(err, err.stack); // an error occurred
 		    else {
-		        console.log("UpdateItem succeeded:", JSON.stringify(data, null, 2));
-		        res.end();
+		    	let Persons = data.Item.Persons;
+				console.log(Persons);
+				let idx = -1;
+				for(let i=0; i<Persons.length; i++){
+					if(Persons[i].FirstName==Name[0].FirstName && Persons[i].LastName==Name[0].LastName){
+						idx = i;
+						break;
+					}
+				}
+				console.log(idx);
+				let params_delete = {
+				    TableName:"AddressTable",
+				    Key:{
+				        "Address_id": add_id,
+				    },
+					'UpdateExpression' : "REMOVE Persons["+idx+"]"
+				};	
+				ddb.update(params_delete, function(err, data) {
+				    if (err) {
+				        console.error("Unable to update item. Error JSON:", JSON.stringify(err, null, 2));
+				    	res.end();
+				    } 
+				    else {
+				        console.log("UpdateItem succeeded:", JSON.stringify(data, null, 2));
+				        res.end();
+				    }
+				});							
 		    }
-		});		
-
+		});
     } 
+
     else{
-		var params = {
+		let params = {
 		    TableName:"AddressTable",
 		    Key:{
 		        "Address_id": add_id,
@@ -121,15 +138,14 @@ router.put('/:add_id/', function(req, res) {
 		    }
 		});    	
     }
-
 });
 
 //delete address id
 router.delete('/:add_id/', function(req, res) {
-	var ddb = new AWS.DynamoDB.DocumentClient();
-    var add_id = req.params.add_id;
+	let ddb = new AWS.DynamoDB.DocumentClient();
+    let add_id = req.params.add_id;
 
-	var params = {
+	let params = {
 	    TableName : 'AddressTable',
 	    Key: {
 	      Address_id: add_id,
@@ -153,9 +169,9 @@ router.delete('/:add_id/', function(req, res) {
 
 // get persons under the address id
 router.get('/:add_id/persons', function(req, res) {
-	var ddb = new AWS.DynamoDB.DocumentClient();
-    var add_id = req.params.add_id;
-	var params = {
+	let ddb = new AWS.DynamoDB.DocumentClient();
+    let add_id = req.params.add_id;
+	let params = {
 	    TableName : 'AddressTable',
 	    Key: {
 	      Address_id: add_id,
