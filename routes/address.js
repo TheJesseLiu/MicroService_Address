@@ -6,16 +6,29 @@ router.use(bodyParser.json());
 router.use(bodyParser.urlencoded({extended: false}));
 var AWS = require("aws-sdk");
 AWS.config.update({region: "us-east-1"});
+var baseURL = "http://localhost:3000/Addresses/"
 
 //get all items
 router.get('/', function(req, res) {
 	let ddb = new AWS.DynamoDB.DocumentClient();	
 	let params = { 
-	  	TableName: "AddressTable"
+	  	TableName: "AddressTable", 	
+	  	Limit: 2
 	};
+	if(req.query.startKey_id!== undefined){
+		params['ExclusiveStartKey'] = {Address_id:req.query.startKey_id};
+	}
 	ddb.scan(params, function(err, data) {
    		if (err) console.log(err, err.stack); // an error occurred
 	    else {
+	    	for(let i=0; i<data.Items.length; i++){
+	    		data.Items[i]["links"] = [
+	    			{"rel":"self", "href":baseURL+data.Items[i].Address_id}			
+	    		];
+	    	}
+	    	data["links"] = [
+				{"rel":"next", "href":baseURL+"?startKey_id="+data.LastEvaluatedKey.Address_id} 	    		
+	    	]
 	    	res.send(data);	
 	    	res.end();
 	    }
@@ -66,6 +79,10 @@ router.get('/:add_id/', function(req, res) {
 	    	res.end("400 Bad Request or the id should be number");
 	    }
 	    else {
+	    	data.Item["links"] = [
+		    	{"rel":"self", "href":baseURL+data.Item.Address_id}, 
+		    	{"rel":"Persons", "href":baseURL+data.Item.Address_id+"/Persons"}
+	    	];
 	    	res.status(200).send(data);
 	    	res.end();
 	    }

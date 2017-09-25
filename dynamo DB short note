@@ -1,45 +1,27 @@
 dynamo DB short note
 
 
-// Person change address
-// person change his name
-// perso change both => post
-
-// if no person live in adderss, delete address
-Simple query, e.g. /Person?lastName=Ferguson
-
-
-
-
-//append name to list
-// 'UpdateExpression' : "SET #attrName = list_append(if_not_exists(#attrName, :empty_list), :attrValue)",
-// 'ExpressionAttributeNames' : {
-//     '#attrName' : 'Persons'
-// },
-// 'ExpressionAttributeValues' : {
-//     ':attrValue' : persons,
-//     ':empty_list': []
-// }
-
-//create attribute
-// UpdateExpression: "set Persons = :p, AddAttr =:a",
-// ExpressionAttributeValues:{
-//     ":p": persons,
-//     ":a":"add attribute"
-// },
-
-
-
 
 //able to send the right http code
 how can we send 202 followed by 200?
 
-how can we query db with attribute in dynamodb?
+
 
 //able to handle if address already exist then addname to the address
+
 //able to handle if person want to change address then remove previous name and add name to new address
 // able to handle if person change name in same address
 // able to handle if person change both name and address
 the above operation should request two api? one is for remove the name is an address, one is add the new name to the other address
+
+
+is it a good way to create hateous manually??
+where else should we add hateaos, or what hateaos link should we add more?
+
+
+Simple query, e.g. /Person?lastName=Ferguson
+how can we query db with attribute in dynamodb?
+only with the primary key and sort key (must be a unigue pair in one table)
+and can query with Gobal search index key
 
 
