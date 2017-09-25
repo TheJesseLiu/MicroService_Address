@@ -36,11 +36,13 @@ router.post('/', function(req, res) {
 	};
 	ddb.put(params, function(err, data) {
 		if (err) {
+			res.status(400);
+			res.send("Address Existed");
 			console.log(err);
 			res.end();
 		}
 		else {
-			console.log(data);
+			res.status(201);
 			res.end();
 		}
 	});
@@ -54,17 +56,23 @@ router.get('/:add_id/', function(req, res) {
 	let params = {
 	    TableName : 'AddressTable',
 	    Key: {
-	      Address_id: '1'
+	      Address_id: add_id
 	    }
 	};	 		
 	ddb.get(params, function(err, data) {
-	    if (err) console.log(err, err.stack); // an error occurred
+	    if (err || isNaN(add_id)) {
+	    	// console.log(err, err.stack); // an error occurred
+	    	res.status(400);
+	    	res.end("400 Bad Request or the id should be number");
+	    }
 	    else {
-	    	res.send(data);	
+	    	res.status(200).send(data);
 	    	res.end();
 	    }
 	});  
 });
+
+
 
 //add person to existing address id or delete person from existing address id
 router.put('/:add_id/', function(req, res) {
@@ -81,7 +89,11 @@ router.put('/:add_id/', function(req, res) {
 		    ProjectionExpression: 'Persons',	  
 		};
 		ddb.get(params, function(err, data) {
-		    if (err) console.log(err, err.stack); // an error occurred
+		    if (err || isNaN(add_id) || !Object.keys(data).length) {
+		    	console.log("400 Bad Request or the Address is not in the database"); // an error occurred
+		    	res.status(400);
+		    	res.end("400 Bad Request or the Address is not in the database");	
+		    }
 		    else {
 		    	let Persons = data.Item.Persons;
 				console.log(Persons);
@@ -103,11 +115,13 @@ router.put('/:add_id/', function(req, res) {
 				ddb.update(params_delete, function(err, data) {
 				    if (err) {
 				        console.error("Unable to update item. Error JSON:", JSON.stringify(err, null, 2));
-				    	res.end();
+				    	res.status(400);
+				    	res.end(Name[0].FirstName+Name[0].LastName+" to be deleted is not in the Address_id="+add_id);				    	
 				    } 
 				    else {
 				        console.log("UpdateItem succeeded:", JSON.stringify(data, null, 2));
-				        res.end();
+				        res.status(204);
+				        res.end(Name[0].FirstName+Name[0].LastName+" has been deleted from Address_id="+add_id);
 				    }
 				});							
 		    }
@@ -130,11 +144,13 @@ router.put('/:add_id/', function(req, res) {
 		ddb.update(params, function(err, data) {
 		    if (err) {
 		        console.error("Unable to update item. Error JSON:", JSON.stringify(err, null, 2));
-		    	res.end();
+		    	res.status(400);
+		    	res.end(Name[0].FirstName+Name[0].LastName+" already exist or the address is not in  the database");
 		    } 
 		    else {
 		        console.log("UpdateItem succeeded:", JSON.stringify(data, null, 2));
-		        res.end();
+				res.status(204);		        
+		        res.end(Name[0].FirstName+Name[0].LastName+" added to Address_id="+add_id);
 		    }
 		});    	
     }
@@ -153,12 +169,13 @@ router.delete('/:add_id/', function(req, res) {
 	};
 
 	ddb.delete(params, function(err, data) {
-	    if (err) {
+	    if (err || isNaN(add_id)) {
 	    	console.log(err);
-	    	res.end();
+	    	res.status(400);
+	    	res.end("400 Bad Request or the add_id should be number");
 	    }
 	    else {
-	    	console.log(data);
+	    	res.status(204);
 	    	res.end()
 	    }
 	});  
@@ -179,9 +196,12 @@ router.get('/:add_id/persons', function(req, res) {
 	    ProjectionExpression: 'Persons',	  
 	};	 		
 	ddb.get(params, function(err, data) {
-	    if (err) console.log(err, err.stack); // an error occurred
+	    if (err || isNaN(add_id)) {
+	    	res.status(400);
+	    	res.end("400 Bad Request or the add_id should be number");	    	
+	    }
 	    else {
-	    	res.send(data);	
+	    	res.status(200).send(data);
 	    	res.end();
 	    }
 	});  

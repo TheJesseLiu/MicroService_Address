@@ -11,5 +11,11 @@ app.listen(port, function () {
 });
 app.use('/Addresses', addressRouter);
 
+app.use(function(req, res, next) {
+    res.status(404);
+    res.end('404: Resouces Not Found');
+});
+
+
 
 
