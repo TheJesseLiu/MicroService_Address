@@ -14,10 +14,12 @@ router.get('/', function(req, res) {
 
     var params;
     var query = req.query;
-    if (isQueryString(query)){
 
+    if (isQueryString(query)){
         var pairs = getKeyValuePairs(query);
         console.log(pairs);
+
+         /*
 
         params = {
             TableName: "AddressTable",
@@ -31,23 +33,29 @@ router.get('/', function(req, res) {
                 ':val1': '123',
                 ':val2': '456',
                 ':val3': '789'
-            },
+            }
 
-            Limit: 2
-        }
+        }   // end params
 
+        */
 
-    } else {
-            params = {
-            TableName: "AddressTable",
-            Limit: 2
-        };
     }
+
+    params = {
+        TableName: "AddressTable",
+        Limit: 2
+    };
+
 
 	if(req.query.startKey_id!== undefined){
 		params['ExclusiveStartKey'] = {Address_id:req.query.startKey_id};
 	}
-
+        // Postal Code attribute scanning here
+	else if(req.query.Postal_Code!== undefined){
+		params['FilterExpression'] = 'Postal_Code= :Postal_Code';
+		params['ExpressionAttributeValues'] = {':Postal_Code' : req.query.Postal_Code};
+		delete params["Limit"];
+	}
 	ddb.scan(params, function(err, data) {
    		if (err) console.log(err, err.stack); // an error occurred
 
@@ -58,11 +66,11 @@ router.get('/', function(req, res) {
 	    			{"rel":"self", "href":baseURL+data.Items[i].Address_id}
 	    		];
 	    	}
-	    	data["links"] = [
-				{"rel":"next", "href":baseURL+"?startKey_id="+data.LastEvaluatedKey.Address_id}
-	    	]
-
-                // reply with JSON
+		    if(req.query.Postal_Code === undefined){
+		    	data["links"] = [
+					{"rel":"next", "href":baseURL+"?startKey_id="+data.LastEvaluatedKey.Address_id}
+		    	]
+		    }
 	    	res.send(data);
 	    	res.end();
 	    }
@@ -89,6 +97,27 @@ function isQueryString(obj){
     // is obj empty?
     return !(Object.keys(obj).length === 0 && obj.constructor === Object);
 }
+
+// // try query
+// router.get('/query/', function(req, res) {
+// 	let ddb = new AWS.DynamoDB.DocumentClient();
+// 	let postal_code = req.query.Postal_Code;
+// 	let params = {
+// 	  	TableName: "AddressTable",
+// 		  FilterExpression : 'Postal_Code= :Postal_Code',
+// 		  ExpressionAttributeValues : {':Postal_Code' : postal_code}
+// 	};
+// 	ddb.scan(params, function(err, data) {
+//    		if (err) console.log(err, err.stack); // an error occurred
+// 	    else {
+// 	    	res.send(data);
+// 	    	res.end();
+// 	    }
+// 	});
+// });
+
+
+
 
 
 //add new address
