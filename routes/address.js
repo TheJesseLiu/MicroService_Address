@@ -6,7 +6,7 @@ router.use(bodyParser.json());
 router.use(bodyParser.urlencoded({extended: false}));
 var AWS = require("aws-sdk");
 AWS.config.update({region: "us-east-1"});
-var baseURL = "http://localhost:3000/Addresses/"
+var baseURL = process.env.BASE_URL;
 
 //get all items
 router.get('/', function(req, res) {
