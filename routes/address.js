@@ -12,6 +12,16 @@ var baseURL = process.env.BASE_URL;
 router.get('/', function(req, res) {
 	let ddb = new AWS.DynamoDB.DocumentClient();
 
+    var query = req.query;
+    if (isQueryString(query)){
+
+        var pairs = getKeyValuePairs(query);
+        console.log(pairs);
+
+
+
+
+    }
 
 
 	let params = {
@@ -43,6 +53,21 @@ router.get('/', function(req, res) {
 	    }
 	});
 });
+
+// convert object with pairs to array with pairs
+function getKeyValuePairs(obj){
+
+    var pairsArr = new Array();
+    for (var key in obj) {
+        if (obj.hasOwnProperty(key)) {
+            //console.log(key + " -> " + obj[key]);
+            pairsArr.push(key);
+            pairsArr.push(obj[key]);
+        }
+    }
+    return pairsArr;
+}
+
 
 // if obj is not empty, then it is a query string
 function isQueryString(obj){
