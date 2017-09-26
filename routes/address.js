@@ -10,11 +10,20 @@ var baseURL = process.env.BASE_URL;
 
 //get all items
 router.get('/', function(req, res) {
-	let ddb = new AWS.DynamoDB.DocumentClient();	
-	let params = { 
-	  	TableName: "AddressTable", 	
+	let ddb = new AWS.DynamoDB.DocumentClient();
+
+    var query = req.query;
+    if (isQueryString(query)){
+        var pairs = getKeyValuePairs(query);
+        console.log(pairs);
+    }
+
+
+	let params = {
+	  	TableName: "AddressTable",
 	  	Limit: 2
 	};
+
 	if(req.query.startKey_id!== undefined){
 		params['ExclusiveStartKey'] = {Address_id:req.query.startKey_id};
 	}
@@ -25,10 +34,12 @@ router.get('/', function(req, res) {
 	}
 	ddb.scan(params, function(err, data) {
    		if (err) console.log(err, err.stack); // an error occurred
-	    else {
+
+        else {
+                // adding HATEOAS format
 	    	for(let i=0; i<data.Items.length; i++){
 	    		data.Items[i]["links"] = [
-	    			{"rel":"self", "href":baseURL+data.Items[i].Address_id}			
+	    			{"rel":"self", "href":baseURL+data.Items[i].Address_id}
 	    		];
 	    	}
 		    if(req.query.Postal_Code === undefined){
@@ -39,9 +50,30 @@ router.get('/', function(req, res) {
 	    	res.send(data);	
 	    	res.end();
 	    }
-	}); 
+	});
 });
+// convert object with pairs to array with pairs
+function getKeyValuePairs(obj){
 
+    var pairsArr = new Array();
+    for (var key in obj) {
+        if (obj.hasOwnProperty(key)) {
+            //console.log(key + " -> " + obj[key]);
+            pairsArr.push(key);
+            pairsArr.push(obj[key]);
+        }
+    }
+    return pairsArr;
+}
+
+
+// if obj is not empty, then it is a query string
+function isQueryString(obj){
+    // is obj empty?
+    return !(Object.keys(obj).length === 0 && obj.constructor === Object);
+}
+
+// // try query
 // router.get('/query/', function(req, res) {
 // 	let ddb = new AWS.DynamoDB.DocumentClient();	
 // 	let postal_code = req.query.Postal_Code; 	
@@ -58,6 +90,10 @@ router.get('/', function(req, res) {
 // 	    }
 // 	}); 
 // });
+
+
+
+
 
 //add new address
 router.post('/', function(req, res) {
@@ -93,7 +129,7 @@ router.get('/:add_id/', function(req, res) {
 	    Key: {
 	      Address_id: add_id
 	    }
-	};	 		
+	};
 	ddb.get(params, function(err, data) {
 	    if (err || isNaN(add_id)) {
 	    	// console.log(err, err.stack); // an error occurred
@@ -102,13 +138,13 @@ router.get('/:add_id/', function(req, res) {
 	    }
 	    else {
 	    	data.Item["links"] = [
-		    	{"rel":"self", "href":baseURL+data.Item.Address_id}, 
+		    	{"rel":"self", "href":baseURL+data.Item.Address_id},
 		    	{"rel":"Persons", "href":baseURL+data.Item.Address_id+"/Persons"}
 	    	];
 	    	res.status(200).send(data);
 	    	res.end();
 	    }
-	});  
+	});
 });
 
 
@@ -125,13 +161,13 @@ router.put('/:add_id/', function(req, res) {
 		    Key: {
 		      Address_id: add_id,
 		    },
-		    ProjectionExpression: 'Persons',	  
+		    ProjectionExpression: 'Persons',
 		};
 		ddb.get(params, function(err, data) {
 		    if (err || isNaN(add_id) || !Object.keys(data).length) {
 		    	console.log("400 Bad Request or the Address is not in the database"); // an error occurred
 		    	res.status(400);
-		    	res.end("400 Bad Request or the Address is not in the database");	
+		    	res.end("400 Bad Request or the Address is not in the database");
 		    }
 		    else {
 		    	let Persons = data.Item.Persons;
@@ -150,22 +186,22 @@ router.put('/:add_id/', function(req, res) {
 				        "Address_id": add_id,
 				    },
 					'UpdateExpression' : "REMOVE Persons["+idx+"]"
-				};	
+				};
 				ddb.update(params_delete, function(err, data) {
 				    if (err) {
 				        console.error("Unable to update item. Error JSON:", JSON.stringify(err, null, 2));
 				    	res.status(400);
-				    	res.end(Name[0].FirstName+Name[0].LastName+" to be deleted is not in the Address_id="+add_id);				    	
-				    } 
+				    	res.end(Name[0].FirstName+Name[0].LastName+" to be deleted is not in the Address_id="+add_id);
+				    }
 				    else {
 				        console.log("UpdateItem succeeded:", JSON.stringify(data, null, 2));
 				        res.status(204);
 				        res.end(Name[0].FirstName+Name[0].LastName+" has been deleted from Address_id="+add_id);
 				    }
-				});							
+				});
 		    }
 		});
-    } 
+    }
 
     else{
 		let params = {
@@ -174,7 +210,7 @@ router.put('/:add_id/', function(req, res) {
 		        "Address_id": add_id,
 		    },
 			'UpdateExpression' : "SET Persons = list_append(Persons, :toAddName)",
-			'ConditionExpression': "not contains (Persons, :toAddNameMap)",		
+			'ConditionExpression': "not contains (Persons, :toAddNameMap)",
 			'ExpressionAttributeValues' : {
 		        ":toAddName": Name,
 		        ":toAddNameMap" : Name[0]
@@ -185,13 +221,13 @@ router.put('/:add_id/', function(req, res) {
 		        console.error("Unable to update item. Error JSON:", JSON.stringify(err, null, 2));
 		    	res.status(400);
 		    	res.end(Name[0].FirstName+Name[0].LastName+" already exist or the address is not in  the database");
-		    } 
+		    }
 		    else {
 		        console.log("UpdateItem succeeded:", JSON.stringify(data, null, 2));
-				res.status(204);		        
+				res.status(204);
 		        res.end(Name[0].FirstName+Name[0].LastName+" added to Address_id="+add_id);
 		    }
-		});    	
+		});
     }
 });
 
@@ -217,7 +253,7 @@ router.delete('/:add_id/', function(req, res) {
 	    	res.status(204);
 	    	res.end()
 	    }
-	});  
+	});
 });
 
 
@@ -232,18 +268,18 @@ router.get('/:add_id/persons', function(req, res) {
 	    Key: {
 	      Address_id: add_id,
 	    },
-	    ProjectionExpression: 'Persons',	  
-	};	 		
+	    ProjectionExpression: 'Persons',
+	};
 	ddb.get(params, function(err, data) {
 	    if (err || isNaN(add_id)) {
 	    	res.status(400);
-	    	res.end("400 Bad Request or the add_id should be number");	    	
+	    	res.end("400 Bad Request or the add_id should be number");
 	    }
 	    else {
 	    	res.status(200).send(data);
 	    	res.end();
 	    }
-	});  
+	});
 });
 
 
