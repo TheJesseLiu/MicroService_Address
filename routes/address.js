@@ -12,22 +12,37 @@ var baseURL = process.env.BASE_URL;
 router.get('/', function(req, res) {
 	let ddb = new AWS.DynamoDB.DocumentClient();
 
+    var params;
     var query = req.query;
     if (isQueryString(query)){
 
         var pairs = getKeyValuePairs(query);
         console.log(pairs);
 
+        params = {
+            TableName: "AddressTable",
+
+            "FilterExpression": '#Address_id in (:val1, :val2, :val3)',
+
+            "ExpressionAttributeNames": {
+                '#Address_id': 'ID'
+            },
+            "ExpressionAttributeValues": {
+                ':val1': '123',
+                ':val2': '456',
+                ':val3': '789'
+            },
+
+            Limit: 2
+        }
 
 
-
+    } else {
+            params = {
+            TableName: "AddressTable",
+            Limit: 2
+        };
     }
-
-
-	let params = {
-	  	TableName: "AddressTable",
-	  	Limit: 2
-	};
 
 	if(req.query.startKey_id!== undefined){
 		params['ExclusiveStartKey'] = {Address_id:req.query.startKey_id};
