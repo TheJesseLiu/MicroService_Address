@@ -5,14 +5,18 @@ dynamo DB short note
 //able to send the right http code
 how can we send 202 followed by 200?
 
+what if the request increase to a bigger amount?
+what does it mean that if server return 202, server can accepty other request.
+where is the proper place to add promise in our project now?
+
 
 
 //able to handle if address already exist then addname to the address
 
-//able to handle if person want to change address then remove previous name and add name to new address
+//able to handle if person want to change address then remove previous name and add name to new address, it the new address is not exist, create it.
 // able to handle if person change name in same address
-// able to handle if person change both name and address
-the above operation should request two api? one is for remove the name is an address, one is add the new name to the other address
+// able to handle if person change both name and address, it the new address is not exist, create it.
+the above operation should request three api? put, post and put. one is for remove the name is an address, one is add the new name to the other address
 
 
 is it a good way to create hateous manually??
@@ -23,5 +27,13 @@ Simple query, e.g. /Person?lastName=Ferguson
 how can we query db with attribute in dynamodb?
 only with the primary key and sort key (must be a unigue pair in one table)
 and can query with Gobal search index key
+
+
+
+NEXT STEP
+ADD ADDRESS DATABASE PERSONS EMAIL, AND PERSONAL ID, SO HAVE PERSON SUBRESOURCE WITH ID
+so probably only strore person id in address table
+
+
 
 
