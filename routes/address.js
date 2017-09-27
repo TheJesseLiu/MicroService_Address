@@ -20,6 +20,8 @@ router.get('/', function(req, res) {
         console.log(pairs);
 
          /*
+         Here you want to assign the values into params,
+         and check if the attribute/key exists!
 
         params = {
             TableName: "AddressTable",
