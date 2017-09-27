@@ -68,7 +68,7 @@ router.get('/', function(req, res) {
 	    			{"rel":"self", "href":baseURL+data.Items[i].Address_id}
 	    		];
 	    	}
-		    if(req.query.Postal_Code === undefined){
+		    if(req.query.Postal_Code === undefined && data.LastEvaluatedKey!==undefined){
 		    	data["links"] = [
 					{"rel":"next", "href":baseURL+"?startKey_id="+data.LastEvaluatedKey.Address_id}
 		    	]
@@ -164,10 +164,13 @@ router.get('/:add_id/', function(req, res) {
 	    	res.end("400 Bad Request or the id should be number");
 	    }
 	    else {
-	    	data.Item["links"] = [
-		    	{"rel":"self", "href":baseURL+data.Item.Address_id},
-		    	{"rel":"Persons", "href":baseURL+data.Item.Address_id+"/Persons"}
-	    	];
+	    	if(data.length!=0){
+		    	data.Item["links"] = [
+			    	{"rel":"self", "href":baseURL+data.Item.Address_id},
+			    	{"rel":"Persons", "href":baseURL+data.Item.Address_id+"/Persons"}
+		    	];	    		
+	    	}
+
 	    	res.status(200).send(data);
 	    	res.end();
 	    }
@@ -181,7 +184,7 @@ router.put('/:add_id/', function(req, res) {
 	let ddb = new AWS.DynamoDB.DocumentClient();
     let add_id = req.params.add_id;
     let Delete = req.body.Delete;
-    Name = req.body.Persons;
+    let reqPerson = req.body.Persons;
     if(Delete=='true'){
 		let params = {
 		    TableName : 'AddressTable',
@@ -201,7 +204,7 @@ router.put('/:add_id/', function(req, res) {
 				console.log(Persons);
 				let idx = -1;
 				for(let i=0; i<Persons.length; i++){
-					if(Persons[i].FirstName==Name[0].FirstName && Persons[i].LastName==Name[0].LastName){
+					if(Persons[i]==reqPerson[0]){
 						idx = i;
 						break;
 					}
@@ -218,12 +221,12 @@ router.put('/:add_id/', function(req, res) {
 				    if (err) {
 				        console.error("Unable to update item. Error JSON:", JSON.stringify(err, null, 2));
 				    	res.status(400);
-				    	res.end(Name[0].FirstName+Name[0].LastName+" to be deleted is not in the Address_id="+add_id);
+				    	res.end(reqPerson[0]+" to be deleted is not in the Address_id="+add_id);
 				    }
 				    else {
 				        console.log("UpdateItem succeeded:", JSON.stringify(data, null, 2));
 				        res.status(204);
-				        res.end(Name[0].FirstName+Name[0].LastName+" has been deleted from Address_id="+add_id);
+				        res.end(reqPerson[0]+" has been deleted from Address_id="+add_id);
 				    }
 				});
 		    }
@@ -236,23 +239,23 @@ router.put('/:add_id/', function(req, res) {
 		    Key:{
 		        "Address_id": add_id,
 		    },
-			'UpdateExpression' : "SET Persons = list_append(Persons, :toAddName)",
-			'ConditionExpression': "not contains (Persons, :toAddNameMap)",
+			'UpdateExpression' : "SET Persons = list_append(Persons, :toAddPerson)",
+			'ConditionExpression': "not contains (Persons, :toAddPersonMap)",
 			'ExpressionAttributeValues' : {
-		        ":toAddName": Name,
-		        ":toAddNameMap" : Name[0]
+		        ":toAddPerson": reqPerson,
+		        ":toAddPersonMap" : reqPerson[0]
 			}
 		};
 		ddb.update(params, function(err, data) {
 		    if (err) {
 		        console.error("Unable to update item. Error JSON:", JSON.stringify(err, null, 2));
 		    	res.status(400);
-		    	res.end(Name[0].FirstName+Name[0].LastName+" already exist or the address is not in  the database");
+		    	res.end(reqPerson[0]+" already exist or the address is not in  the database");
 		    }
 		    else {
 		        console.log("UpdateItem succeeded:", JSON.stringify(data, null, 2));
 				res.status(204);
-		        res.end(Name[0].FirstName+Name[0].LastName+" added to Address_id="+add_id);
+		        res.end(reqPerson[0]+" added to Address_id="+add_id);
 		    }
 		});
     }
